@@ -25,22 +25,18 @@ namespace webapi.Controllers
             _roleService = roleService;
         }
 
-        // GET: api/Roles
         [HttpGet]
         public async Task<ActionResult<List<GetRoleDTO>>> GetRole()
         {
-            return await _roleService.GetRoles();
+            return await _roleService.GetRoles(new List<int> {});
         }
 
-        // GET: api/Roles/5
         [HttpGet("{id}")]
         public async Task<ActionResult<GetRoleDTO>> GetRole(int id)
         {
             return await _roleService.GetRole(id);
         }
 
-        // PUT: api/Roles/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutRole(int id, Role role)
         {
@@ -73,50 +69,9 @@ namespace webapi.Controllers
         [HttpPost]
         public async Task<ActionResult<GetRoleDTO>> CreateRole(CreateEditRoleDTO roleDto)
         {
-            if (roleDto == null)
-            {
-              return Problem("É necessário fornecer as informações do cargo");
-            }
+            var responseDto = await _roleService.CreateRole(roleDto);
+            return responseDto;
 
-            if (string.IsNullOrEmpty(roleDto.Name) == true)
-            {
-              return Problem("É necessário o nome do cargo");
-            }
-
-            if (roleDto.CompanyId <= 0) 
-            {
-                return Problem("É necessário informar a empresa que o cargo pertence");
-            }
-
-            var alreadyExist = await _context.Role.Where(role => role.Id == roleDto.Id).AnyAsync();
-
-            if (alreadyExist == true) 
-            { 
-                return Problem("O ID deste cargo já existe. Por favor, utilize outro ID.");
-            }
-
-            var role = new Role();
-            role.Id = roleDto.Id;
-            role.Name = roleDto.Name;
-            role.BaseSalary = roleDto.BaseSalary;
-            role.Company = await _context.Company.Where(company => company.Id == roleDto.CompanyId).FirstOrDefaultAsync();;
-
-            _context.Role.Add(role);
-            await _context.SaveChangesAsync();
-
-            var responseDto = new GetRoleDTO()
-            {
-                Id = role.Id,
-                Name = role.Name,
-                BaseSalary = role.BaseSalary,
-                Company = new GetCompanyDTO
-                {
-                    Id = role.Company.Id,
-                    Name = role.Company.Name
-                },
-            };
-
-            return CreatedAtAction("CreateRole", new { id = role.Id }, responseDto);
         }
 
         // DELETE: api/Roles/5

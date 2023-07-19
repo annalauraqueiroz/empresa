@@ -11,6 +11,7 @@ namespace webapi.Models
         public double BaseSalary { get; set; }
         [InverseProperty("Roles")]
         public Company Company { get; set; }
+        public bool IsDeleted { get; set; }
 
         public ICollection<Employee> Employees { get; set; } = new List<Employee>();
 
@@ -21,6 +22,7 @@ namespace webapi.Models
             Name = name;
             BaseSalary = baseSalary;
             Company = company;
+            IsDeleted = false;
         }
     }
 }
