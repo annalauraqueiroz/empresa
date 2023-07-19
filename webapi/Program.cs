@@ -8,7 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddDbContext<CompanyContext>(options =>
-options.UseMySQL(builder.Configuration.GetConnectionString("CompanyContext"), builder => builder.MigrationsAssembly("webapi")));
+    options.UseMySQL(builder.Configuration.GetConnectionString("CompanyContext"), builder => builder.MigrationsAssembly("webapi"))
+);
 builder.Services.AddControllers();
 builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<RoleService>();
