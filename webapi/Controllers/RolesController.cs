@@ -37,9 +37,9 @@ namespace webapi.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<bool>> PutRole(EditRoleDTO roleDto)
+        public async Task<ActionResult<string>> PutRole(EditRoleDTO roleDto)
         {
-            return await _roleService.EditRole(roleDto);
+            return await _roleService.EditRole(roleDto) ? "Data changed successfully" : "There was a problem editing data"; 
         }
 
         [HttpPost]
@@ -49,7 +49,6 @@ namespace webapi.Controllers
 
         }
 
-        // DELETE: api/Roles/5
         [HttpDelete("{id}")]
         public async Task<ActionResult<bool>> DeleteRole(int id)
         {

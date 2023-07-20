@@ -75,35 +75,42 @@ namespace webapi.Services
         }
         public async Task<bool> EditRole(EditRoleDTO roleDTO)
         {
-            
-            var company = await _context.Company.Where(company => company.Id == roleDTO.CompanyId).AsNoTracking().FirstOrDefaultAsync();
-
-            await _context.Role.Where(role => role.Id == roleDTO.Id).ForEachAsync(role => 
-                {
-                    role.Name = string.IsNullOrEmpty(roleDTO.Name) ? role.Name : roleDTO.Name;
-                    role.BaseSalary = roleDTO.BaseSalary != 0 ? roleDTO.BaseSalary : role.BaseSalary;
-                    role.Company = roleDTO.CompanyId != 0 ? new Company { Id = company.Id, Name = company.Name } : role.Company;
-                }
-            );
+            var response = true;
+            var role = await _context.Role.Where(role => role.Id == roleDTO.Id && !role.IsDeleted).FirstOrDefaultAsync();
 
             try
             {
+                role.Name = string.IsNullOrEmpty(roleDTO.Name) ? role.Name : roleDTO.Name;
+                role.BaseSalary = roleDTO.BaseSalary != 0 ? roleDTO.BaseSalary : role.BaseSalary;
+
+                if (roleDTO.CompanyId > 0)
+                {
+                    var company = await _context.Company.Where(company => company.Id == roleDTO.CompanyId).FirstOrDefaultAsync();
+                    if (company == null)
+                    {
+                        response = false;
+                        throw new InvalidOperationException("company is null");
+                    }
+                    role.Company = company;
+                }
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception e)
             {
                 if (!RoleExists(roleDTO.Id).Result)
                 {
-                    throw new InvalidOperationException("role is null");
+                    response = false;
+                    throw new InvalidOperationException("role is invalid, null or not found");
                 }
                 else
                 {
+                    response = false;
                     throw new InvalidOperationException("role id is not valid");
                 }
                
             }
 
-            return true;
+            return response;
         }
         public async Task<bool> DeleteRole(int id)
         {
