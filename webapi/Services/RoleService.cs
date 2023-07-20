@@ -1,9 +1,8 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.EntityFrameworkCore;
 using webapi.Data;
 using webapi.Models;
 using Microsoft.IdentityModel.Tokens;
+using System.Data;
 
 namespace webapi.Services
 {
@@ -37,6 +36,7 @@ namespace webapi.Services
                 Id = role.Id,
                 Name = role.Name,
                 BaseSalary = role.BaseSalary,
+                IsDeleted = role.IsDeleted,
                 Company = new GetCompanyDTO
                 {
                     Id = role.Company.Id,
@@ -45,7 +45,7 @@ namespace webapi.Services
             }).ToListAsync();
         }
 
-        public async Task<GetRoleDTO> CreateRole(CreateEditRoleDTO roleDTO)
+        public async Task<CreateRoleDTO> CreateRole(CreateRoleDTO roleDTO)
         {
             
             if (!RoleIsValid(roleDTO).Result)
@@ -54,7 +54,6 @@ namespace webapi.Services
             }
 
             var role = new Role();
-            role.Id = roleDTO.Id;
             role.Name = roleDTO.Name;
             role.BaseSalary = roleDTO.BaseSalary;
             role.IsDeleted = false;
@@ -63,50 +62,94 @@ namespace webapi.Services
             _context.Role.Add(role);
             await _context.SaveChangesAsync();
 
-            var responseDto = new GetRoleDTO()
+            var responseDto = new CreateRoleDTO()
             {
-                Id = role.Id,
                 Name = role.Name,
                 BaseSalary = role.BaseSalary,
-                Company = new GetCompanyDTO
-                {
-                    Id = role.Company.Id,
-                    Name = role.Company.Name
-                },
+                CompanyId = role.Company.Id
+                
             };
 
             return responseDto;
             
         }
-        public async Task<bool> RoleIsValid(CreateEditRoleDTO roleDto)
+        public async Task<bool> EditRole(EditRoleDTO roleDTO)
+        {
+            
+            var company = await _context.Company.Where(company => company.Id == roleDTO.CompanyId).AsNoTracking().FirstOrDefaultAsync();
+
+            await _context.Role.Where(role => role.Id == roleDTO.Id).ForEachAsync(role => 
+                {
+                    role.Name = string.IsNullOrEmpty(roleDTO.Name) ? role.Name : roleDTO.Name;
+                    role.BaseSalary = roleDTO.BaseSalary != 0 ? roleDTO.BaseSalary : role.BaseSalary;
+                    role.Company = roleDTO.CompanyId != 0 ? new Company { Id = company.Id, Name = company.Name } : role.Company;
+                }
+            );
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!RoleExists(roleDTO.Id).Result)
+                {
+                    throw new InvalidOperationException("role is null");
+                }
+                else
+                {
+                    throw new InvalidOperationException("role id is not valid");
+                }
+               
+            }
+
+            return true;
+        }
+        public async Task<bool> DeleteRole(int id)
+        {
+            if (!RoleExists(id).Result)
+            {
+                return false;
+            }
+
+            await _context.Role.Where(role => role.Id == id).ForEachAsync(role =>
+                role.IsDeleted = true
+            );
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+    
+        public async Task<bool> RoleExists(int id)
+        {
+            var roleDTO = await GetRole(id);
+
+            return !(roleDTO == null || roleDTO.IsDeleted == true);
+        }
+        public async Task<bool> RoleIsValid(CreateRoleDTO roleDto)
         {
             if (roleDto == null)
             {
-                throw new ArgumentNullException("É necessário fornecer as informações do cargo");
+                throw new ArgumentNullException("Role info are necessary to create a new role");
 
             }
 
             if (string.IsNullOrEmpty(roleDto.Name) == true)
             {
                 
-                throw new ArgumentNullException("É necessário o nome do cargo");
+                throw new ArgumentNullException("Field name cannot be null");
             }
 
             if (roleDto.CompanyId <= 0)
             {
-                throw new ArgumentNullException("É necessário informar a empresa que o cargo pertence");
+                throw new ArgumentNullException("Field Company cannot be null");
                
             }
-
-            var alreadyExist = await _context.Role.Where(role => role.Id == roleDto.Id).AnyAsync();
-
-            if (alreadyExist == true)
-            {
-                
-                throw new ArgumentException("O ID deste cargo já existe. Por favor, utilize outro ID.");
-            }
+            
             
             return true;
         }
+
     }
 }

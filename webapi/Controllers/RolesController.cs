@@ -16,12 +16,11 @@ namespace webapi.Controllers
     [ApiController]
     public class RolesController : ControllerBase
     {
-        private readonly CompanyContext _context;
+        
         private readonly RoleService _roleService;
 
-        public RolesController(CompanyContext context, RoleService roleService)
+        public RolesController( RoleService roleService)
         {
-            _context = context;
             _roleService = roleService;
         }
 
@@ -38,65 +37,25 @@ namespace webapi.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutRole(int id, Role role)
+        public async Task<ActionResult<bool>> PutRole(EditRoleDTO roleDto)
         {
-            if (id != role.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(role).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!RoleExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            return await _roleService.EditRole(roleDto);
         }
 
         [HttpPost]
-        public async Task<ActionResult<GetRoleDTO>> CreateRole(CreateEditRoleDTO roleDto)
+        public async Task<ActionResult<CreateRoleDTO>> CreateRole(CreateRoleDTO roleDto)
         {
-            var responseDto = await _roleService.CreateRole(roleDto);
-            return responseDto;
+            return await _roleService.CreateRole(roleDto);
 
         }
 
         // DELETE: api/Roles/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteRole(int id)
+        public async Task<ActionResult<bool>> DeleteRole(int id)
         {
-            if (_context.Role == null)
-            {
-                return NotFound();
-            }
-            var role = await _context.Role.FindAsync(id);
-            if (role == null)
-            {
-                return NotFound();
-            }
-
-            _context.Role.Remove(role);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            return await _roleService.DeleteRole(id);
         }
 
-        private bool RoleExists(int id)
-        {
-            return (_context.Role?.Any(e => e.Id == id)).GetValueOrDefault();
-        }
+        
     }
 }

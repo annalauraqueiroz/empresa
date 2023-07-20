@@ -9,13 +9,19 @@
         public GetCompanyDTO Company { get; set; }
     }
 
-    public class CreateEditRoleDTO
+    public class CreateRoleDTO
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public double BaseSalary { get; set; }
         public int CompanyId { get; set; }
     }
+
+    public class EditRoleDTO : CreateRoleDTO 
+    {
+        public int Id { get; set; }
+    }
+    
+
 
 }
 
