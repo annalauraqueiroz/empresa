@@ -23,6 +23,7 @@ namespace webapi.Models
             BaseSalary = baseSalary;
             Company = company;
             IsDeleted = false;
+
         }
     }
 }

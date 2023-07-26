@@ -41,6 +41,7 @@ namespace webapi.Services
                 {
                     Id = role.Company.Id,
                     Name = role.Company.Name,
+                    IsDeleted = role.Company.IsDeleted,
                 }
             }).ToListAsync();
         }
