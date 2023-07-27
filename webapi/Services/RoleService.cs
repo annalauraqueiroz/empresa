@@ -3,6 +3,7 @@ using webapi.Data;
 using webapi.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.Data;
+using System.Runtime.CompilerServices;
 
 namespace webapi.Services
 {
@@ -29,6 +30,29 @@ namespace webapi.Services
                 || roleIds.Count > 0)
             {
                 roleAsync = roleAsync.Where(role => roleIds.Contains(role.Id));
+            }
+
+            return await roleAsync.Select(role => new GetRoleDTO
+            {
+                Id = role.Id,
+                Name = role.Name,
+                BaseSalary = role.BaseSalary,
+                IsDeleted = role.IsDeleted,
+                Company = new GetCompanyDTO
+                {
+                    Id = role.Company.Id,
+                    Name = role.Company.Name,
+                    IsDeleted = role.Company.IsDeleted,
+                }
+            }).ToListAsync();
+        }
+        public async Task<List<GetRoleDTO>> GetRoles(string name)
+        {
+            IQueryable<Role> roleAsync = _context.Role.Where(role => role.IsDeleted == false);
+
+            if (!name.IsNullOrEmpty())
+            {
+                roleAsync = roleAsync.Where(role => role.Name.Contains(name));
             }
 
             return await roleAsync.Select(role => new GetRoleDTO

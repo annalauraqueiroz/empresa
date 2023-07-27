@@ -101,16 +101,14 @@ namespace webapi.Services
             {
                 return false;
             }
-            await _context.Company.Where(comp => comp.Id == id).ForEachAsync(comp =>
-                { 
+            await _context.Company.Where(comp => comp.Id == id)
+                .Include(company => company.Roles)
+                .ForEachAsync(comp =>
+                {
                     comp.IsDeleted = true;
+                    comp.Roles.ForEach(role => role.IsDeleted = true);
                 }
             );
-            await _context.Role.Where(role => role.Company.Id == id).ForEachAsync(role =>
-                role.IsDeleted = true
-            );
-            
-
             await _context.SaveChangesAsync();
             return true;
         }

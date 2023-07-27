@@ -22,10 +22,15 @@ namespace webapi.Controllers
             return await _roleService.GetRoles(new List<int> {});
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<GetRoleDTO>> GetRole(int id)
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<GetRoleDTO>> GetRoleById(int id)
         {
             return await _roleService.GetRole(id);
+        }
+        [HttpGet("{name:alpha}")]
+        public async Task<ActionResult<List<GetRoleDTO>>> GetRoles(string name)
+        {
+            return await _roleService.GetRoles(name);
         }
 
         [HttpPut("{id}")]
