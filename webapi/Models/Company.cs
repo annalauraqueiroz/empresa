@@ -11,8 +11,6 @@ namespace webapi.Models
         public bool IsDeleted { get; set; }
         [InverseProperty("Company")]
         public List<Role> Roles { get; set; } = new List<Role>();
-
-        public ICollection<Employee> Employees { get; set; } = new List<Employee>();
         public Company()
         {
 
@@ -23,9 +21,5 @@ namespace webapi.Models
             Name = name;
         }
 
-        public void AddEmployee(Employee employee)
-        {
-            Employees.Add(employee);
-        }
     }
 }

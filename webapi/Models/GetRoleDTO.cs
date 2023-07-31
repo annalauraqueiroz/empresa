@@ -7,6 +7,7 @@
         public double BaseSalary { get; set; }
         public bool IsDeleted { get; set; }
         public GetCompanyDTO Company { get; set; }
+        public List<GetEmployeeDTO> Employees { get; set; } = new List<GetEmployeeDTO>();
     }
 
     public class CreateRoleDTO

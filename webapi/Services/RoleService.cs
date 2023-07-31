@@ -4,6 +4,7 @@ using webapi.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.Data;
 using System.Runtime.CompilerServices;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace webapi.Services
 {
@@ -43,12 +44,19 @@ namespace webapi.Services
                     Id = role.Company.Id,
                     Name = role.Company.Name,
                     IsDeleted = role.Company.IsDeleted,
-                }
+                },
+                Employees = role.Employees.Where(emp => emp.IsDeleted == false).Select(emp => new GetEmployeeDTO
+                {
+                    Id = emp.Id,
+                    Name = emp.Name,
+
+                }).ToList(),
             }).ToListAsync();
         }
         public async Task<List<GetRoleDTO>> GetRoles(string name)
         {
-            IQueryable<Role> roleAsync = _context.Role.Where(role => role.IsDeleted == false);
+            IQueryable<Role> roleAsync = _context.Role
+                .Where(role => role.IsDeleted == false);
 
             if (!name.IsNullOrEmpty())
             {
@@ -66,27 +74,64 @@ namespace webapi.Services
                     Id = role.Company.Id,
                     Name = role.Company.Name,
                     IsDeleted = role.Company.IsDeleted,
-                }
+                },
+                Employees = role.Employees.Where(emp => emp.IsDeleted == false && emp.Role.Id == role.Id).Select(emp => new GetEmployeeDTO
+                {
+                    Id = role.Id,
+                    Name = role.Name,
+
+                }).ToList(),
             }).ToListAsync();
         }
+        public async Task<List<GetRoleDTO>> GetRolesByCompanyId(int companyId)
+        {
+            IQueryable<Role> roleAsync = _context.Role
+                .Where(role => role.IsDeleted == false && role.Company.Id == companyId);
 
+
+            return await roleAsync.Select(role => new GetRoleDTO
+            {
+                Id = role.Id,
+                Name = role.Name,
+                BaseSalary = role.BaseSalary,
+                IsDeleted = role.IsDeleted,
+                Company = new GetCompanyDTO
+                {
+                    Id = role.Company.Id,
+                    Name = role.Company.Name,
+                    IsDeleted = role.Company.IsDeleted,
+                },
+                Employees = role.Employees.Where(emp => emp.IsDeleted == false && emp.Role.Id == role.Id).Select(emp => new GetEmployeeDTO
+                {
+                    Id = role.Id,
+                    Name = role.Name,
+
+                }).ToList(),
+            }).ToListAsync();
+        }
         public async Task<CreateRoleDTO> CreateRole(CreateRoleDTO roleDTO)
         {
-            
-            if (!RoleIsValid(roleDTO).Result)
-            {
-                throw new Exception("Role is not valid");
-            }
-
             var role = new Role();
-            role.Name = roleDTO.Name;
-            role.BaseSalary = roleDTO.BaseSalary;
-            role.IsDeleted = false;
-            role.Company = await _context.Company.Where(company => company.Id == roleDTO.CompanyId).FirstOrDefaultAsync();
-
-            _context.Role.Add(role);
-            await _context.SaveChangesAsync();
-
+           
+            try
+            {
+                role.Name = roleDTO.Name;
+                role.BaseSalary = roleDTO.BaseSalary;
+                role.IsDeleted = false;
+                role.Company = await _context.Company.Where(company => company.Id == roleDTO.CompanyId && !company.IsDeleted).FirstOrDefaultAsync();
+                _context.Role.Add(role);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception e)
+            {
+                if (!RoleIsValid(roleDTO).Result)
+                {
+                    throw new Exception("Role is not valid");
+                }else if(role.Company == null)
+                {
+                    throw new Exception("Company is not valid.");
+                }
+            }
             var responseDto = new CreateRoleDTO()
             {
                 Name = role.Name,
@@ -98,25 +143,24 @@ namespace webapi.Services
             return responseDto;
             
         }
-        public async Task<bool> EditRole(EditRoleDTO roleDTO)
+        public async Task<string> EditRole(EditRoleDTO roleDTO)
         {
-            var response = true;
-            var role = await _context.Role.Where(role => role.Id == roleDTO.Id && !role.IsDeleted).FirstOrDefaultAsync();
-
             try
             {
+                var role = await _context.Role.Where(role => role.Id == roleDTO.Id && !role.IsDeleted).FirstOrDefaultAsync();
+                
                 role.Name = string.IsNullOrEmpty(roleDTO.Name) ? role.Name : roleDTO.Name;
                 role.BaseSalary = roleDTO.BaseSalary != 0 ? roleDTO.BaseSalary : role.BaseSalary;
 
                 if (roleDTO.CompanyId > 0)
                 {
-                    var company = await _context.Company.Where(company => company.Id == roleDTO.CompanyId).FirstOrDefaultAsync();
-                    if (company == null)
+                    var company = await _context.Company.Where(company => company.Id == roleDTO.CompanyId && !company.IsDeleted).FirstOrDefaultAsync();
+                    if(company == null)
                     {
-                        response = false;
-                        throw new InvalidOperationException("company is null");
+                        throw new NullReferenceException("company is invalid");
                     }
-                    role.Company = company;
+                    role.Company.Id = company.Id;
+                    role.Company.Name = company.Name;
                 }
                 await _context.SaveChangesAsync();
             }
@@ -124,33 +168,30 @@ namespace webapi.Services
             {
                 if (!RoleExists(roleDTO.Id).Result)
                 {
-                    response = false;
                     throw new InvalidOperationException("role is invalid, null or not found");
                 }
-                else
-                {
-                    response = false;
-                    throw new InvalidOperationException("role id is not valid");
-                }
-               
+                    return e.Message;
             }
 
-            return response;
+            return "Data successfuly changed";
         }
-        public async Task<bool> DeleteRole(int id)
+        public async Task<string> DeleteRole(int id)
         {
             if (!RoleExists(id).Result)
             {
-                return false;
+                return "Role id is invalid";
             }
+            var role = await _context.Role.Where(role => role.Id == id).FirstOrDefaultAsync();
 
-            await _context.Role.Where(role => role.Id == id).ForEachAsync(role =>
-                role.IsDeleted = true
-            );
+            if (role.Employees.Any())
+            {
+                return "Cannot delete role if there is employees attached to position";
+            }
+            role.IsDeleted = true;
 
             await _context.SaveChangesAsync();
 
-            return true;
+            return "Role successfuly deleted";
         }
     
         public async Task<bool> RoleExists(int id)

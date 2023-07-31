@@ -19,7 +19,12 @@ namespace webapi.Controllers
         {
             return await _companyService.GetCompanies(new List<int> { });
         }
-
+       /* [HttpGet]
+        public async Task<ActionResult<List<GetEmployeeDTO>>> GetEmployees(int companyId)
+        {
+            return await _companyService.GetEmployees(companyId);
+        }
+       */
         [HttpGet("{id}")]
         public async Task<ActionResult<GetCompanyDTO>> GetCompany(int id)
         {

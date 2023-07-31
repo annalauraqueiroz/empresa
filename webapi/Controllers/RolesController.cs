@@ -32,11 +32,16 @@ namespace webapi.Controllers
         {
             return await _roleService.GetRoles(name);
         }
+        [HttpGet("company/{id}")]
+        public async Task<ActionResult<List<GetRoleDTO>>> GetRoleByCompanyId(int id)
+        {
+            return await _roleService.GetRolesByCompanyId(id);
+        }
 
         [HttpPut("{id}")]
         public async Task<ActionResult<string>> PutRole(EditRoleDTO roleDto)
         {
-            return await _roleService.EditRole(roleDto) ? "Data changed successfully" : "There was a problem editing data"; 
+            return await _roleService.EditRole(roleDto); 
         }
 
         [HttpPost]
@@ -47,7 +52,7 @@ namespace webapi.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult<bool>> DeleteRole(int id)
+        public async Task<ActionResult<string>> DeleteRole(int id)
         {
             return await _roleService.DeleteRole(id);
         }

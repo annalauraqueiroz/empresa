@@ -12,8 +12,8 @@ namespace webapi.Models
         [InverseProperty("Roles")]
         public Company Company { get; set; }
         public bool IsDeleted { get; set; }
-
-        public ICollection<Employee> Employees { get; set; } = new List<Employee>();
+        [InverseProperty("Role")]
+        public List<Employee> Employees { get; set; } = new List<Employee>();
 
         public Role() { }
         public Role(int id, string name, double baseSalary, Company company)

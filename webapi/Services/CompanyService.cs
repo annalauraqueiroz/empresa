@@ -22,14 +22,16 @@ namespace webapi.Services
         }
         public async Task<List<GetCompanyDTO>> GetCompanies(List<int> companyIds = null)
         {
-            IQueryable<Company> companyAsync = _context.Company.Where(company => company.IsDeleted == false).OrderBy(c => c.Name);
+            IQueryable<Company> companyAsync = _context.Company
+                .Where(company => company.IsDeleted == false)
+                .OrderBy(c => c.Name);
 
             if (!companyIds.IsNullOrEmpty()
                 || companyIds.Count > 0)
             {
                 companyAsync = companyAsync.Where(company => companyIds.Contains(company.Id));
             }
-
+            
 
             return await companyAsync.Select(company => new GetCompanyDTO
             {
@@ -40,11 +42,24 @@ namespace webapi.Services
                 {
                     Id = role.Id,
                     Name = role.Name,
+                    Employees = role.Employees.Where(emp=> emp.IsDeleted == false).Select(emp => new GetEmployeeDTO
+                    {
+                        Id=emp.Id,
+                        Name = emp.Name,
+                    }).ToList()
+                }).ToList(),
+               
 
-                }).ToList()
+
+
             }).ToListAsync();
         }
 
+        public async Task<List<GetEmployeeDTO>> GetEmployees(int companyId)
+        {
+            var companies = await GetCompany(companyId);
+            return companies.Employees.ToList();
+        }
         public async Task<CreateCompanyDTO> CreateCompany(CreateCompanyDTO companyDTO)
         {
 
