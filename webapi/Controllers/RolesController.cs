@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using webapi.Data;
+﻿using Microsoft.AspNetCore.Mvc;
 using webapi.Models;
 using webapi.Services;
 
@@ -30,16 +22,26 @@ namespace webapi.Controllers
             return await _roleService.GetRoles(new List<int> {});
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<GetRoleDTO>> GetRole(int id)
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<GetRoleDTO>> GetRoleById(int id)
         {
             return await _roleService.GetRole(id);
         }
+        [HttpGet("{name:alpha}")]
+        public async Task<ActionResult<List<GetRoleDTO>>> GetRoles(string name)
+        {
+            return await _roleService.GetRoles(name);
+        }
+        [HttpGet("company/{id}")]
+        public async Task<ActionResult<List<GetRoleDTO>>> GetRoleByCompanyId(int id)
+        {
+            return await _roleService.GetRolesByCompanyId(id);
+        }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<bool>> PutRole(EditRoleDTO roleDto)
+        public async Task<ActionResult<string>> PutRole(EditRoleDTO roleDto)
         {
-            return await _roleService.EditRole(roleDto);
+            return await _roleService.EditRole(roleDto); 
         }
 
         [HttpPost]
@@ -49,9 +51,8 @@ namespace webapi.Controllers
 
         }
 
-        // DELETE: api/Roles/5
         [HttpDelete("{id}")]
-        public async Task<ActionResult<bool>> DeleteRole(int id)
+        public async Task<ActionResult<string>> DeleteRole(int id)
         {
             return await _roleService.DeleteRole(id);
         }

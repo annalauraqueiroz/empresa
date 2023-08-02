@@ -4,5 +4,18 @@
     {
         public int Id { get; set; }
         public string Name { get; set; }
+        public bool IsDeleted { get; set; }
+        public List<GetRoleDTO> Roles { get; set; } = new List<GetRoleDTO>();
+        public List<GetEmployeeDTO> Employees { get; set; } = new List<GetEmployeeDTO>();
+        
+    }
+    public class CreateCompanyDTO
+    {
+        public string? Name { get; set; }
+    }
+
+    public class EditCompanyDTO : CreateCompanyDTO
+    {
+        public int Id { get; set; }
     }
 }
